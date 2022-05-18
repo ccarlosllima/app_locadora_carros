@@ -87,15 +87,11 @@ class CarroController extends Controller
     {
         $carro = $this->carro->find($id);
 
-
         if ($carro === null) {
             return response()->json(["error" => "Imposivel realizar atualização. O recurso solicitado não existe"], 404);
-        }
-        
+        }       
         if ($request->method() === 'PATCH') {
-
             $regras_patch = [];
-
             foreach ($carro->rules() as $key => $regra) {
                 if (array_key_exists($key, $request->all())) {
                     $regras_patch[$key] = $regra;
@@ -128,6 +124,6 @@ class CarroController extends Controller
         }
         
         $carro->delete();
-        return response()->json(["msg" => "recurso excluido com sucesso"], 200);
+        return response()->json(["msg" => "carro excluido com sucesso"], 200);
     }
 }

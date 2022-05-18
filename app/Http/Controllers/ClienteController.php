@@ -2,30 +2,33 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreClienteRequest;
-use App\Http\Requests\UpdateClienteRequest;
+use Illuminate\Http\Request;
 use App\Models\Cliente;
+use App\Repositores\ClienteRepository;
 
 class ClienteController extends Controller
 {
+    public function __construct(Cliente $cliente)
+    {
+        $this->cliente = $cliente;
+    }
     /**
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
-    }
+        $clienteRepository = new ClienteRepository($this->cliente);
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        //
+        if($request->has('filtro')) {
+            $clienteRepository->filtro($request->filtro);
+        }
+        if($request->has('atributos')) {
+            $clienteRepository->selectAtributos($request->atributos);
+        } 
+
+        return response()->json($clienteRepository->getResultado(), 200);
     }
 
     /**
@@ -34,9 +37,14 @@ class ClienteController extends Controller
      * @param  \App\Http\Requests\StoreClienteRequest  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(StoreClienteRequest $request)
+    public function store(Request $request)
     {
-        //
+        $request->validate($this->cliente->rules());
+
+        $cliente =  $this->cliente->create([
+            'nome' => $request->nome
+        ]);  
+       return response()->json($cliente, 201);
     }
 
     /**
@@ -45,32 +53,47 @@ class ClienteController extends Controller
      * @param  \App\Models\Cliente  $cliente
      * @return \Illuminate\Http\Response
      */
-    public function show(Cliente $cliente)
+    public function show($id)
     {
-        //
-    }
+        $cliente = $this->cliente->find($id);
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\Cliente  $cliente
-     * @return \Illuminate\Http\Response
-     */
-    public function edit(Cliente $cliente)
-    {
-        //
+        if ($cliente === null) {
+
+            return response()->json(["error" => "Recurso não existe"],404);
+        }
+        return response()->json($cliente, 200);
     }
 
     /**
      * Update the specified resource in storage.
      *
-     * @param  \App\Http\Requests\UpdateClienteRequest  $request
+     * @param  \App\Http\Requests\UpdateCarroRequest  $request
      * @param  \App\Models\Cliente  $cliente
      * @return \Illuminate\Http\Response
      */
-    public function update(UpdateClienteRequest $request, Cliente $cliente)
+    public function update(Request $request, $id)
     {
-        //
+        $cliente = $this->cliente->find($id);
+
+        if ($cliente === null) {
+            return response()->json(["error" => "Imposivel realizar atualização. O recurso solicitado não existe"], 404);
+        }       
+        if ($request->method() === 'PATCH') {
+            $regras_patch = [];
+            foreach ($cliente->rules() as $key => $regra) {
+                if (array_key_exists($key, $request->all())) {
+                    $regras_patch[$key] = $regra;
+                }
+            }
+            $request->validate($regras_patch);
+        }else{
+            $request->validate($cliente->rules());
+        }
+
+        $cliente->fill($request->all());    
+        $cliente->save();
+       
+        return response()->json($cliente, 200);
     }
 
     /**
@@ -79,8 +102,15 @@ class ClienteController extends Controller
      * @param  \App\Models\Cliente  $cliente
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Cliente $cliente)
+    public function destroy($id)
     {
-        //
+        $cliente = $this->cliente->find($id);
+
+        if($cliente === null){
+            return response()->json(["error" => "Imposivel realizar a remoção. O recurso solicitado não existe"], 404);
+        }
+    
+        $cliente->delete();
+        return response()->json(["msg" => "cliente excluido com sucesso"], 200);
     }
 }
