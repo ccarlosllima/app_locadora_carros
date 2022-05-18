@@ -21,7 +21,7 @@ class ModeloController extends Controller
     public function index(Request $request)
     {
         $modeloRepsitory = new ModeloRepository($this->modelo);
-        
+    
         if ($request->has('atributos_marca')) {
             $atributos_marca = 'marca:id,'.$request->atributos_marca;
             $modeloRepsitory->selectAtributosRegistrosRelacionados($atributos_marca);
